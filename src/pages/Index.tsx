@@ -83,6 +83,13 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<Section>("site");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyIp = () => {
+    navigator.clipboard.writeText(SERVERS[0].ip);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -184,8 +191,12 @@ export default function Index() {
                   Лучший ролевой сервер SA:MP. Живая экономика, реалистичные фракции и уникальный игровой мир ждут тебя.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <button className="bg-[var(--neon-blue)] text-[var(--deep-navy)] font-bold px-8 py-3 rounded neon-glow hover:scale-105 transition-transform text-sm tracking-wide uppercase">
-                    Играть сейчас
+                  <button
+                    onClick={handleCopyIp}
+                    className="bg-[var(--neon-blue)] text-[var(--deep-navy)] font-bold px-8 py-3 rounded neon-glow hover:scale-105 transition-transform text-sm tracking-wide uppercase flex items-center gap-2"
+                  >
+                    <Icon name={copied ? "Check" : "Copy"} size={15} />
+                    {copied ? "IP скопирован!" : "Играть сейчас"}
                   </button>
                   <button
                     onClick={() => setActiveSection("forum")}
