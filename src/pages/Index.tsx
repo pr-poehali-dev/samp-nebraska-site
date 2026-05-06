@@ -92,6 +92,30 @@ export default function Index() {
   const [copied, setCopied] = useState(false);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
 
+  interface NewsItem {
+    id: number;
+    title: string;
+    text: string;
+    tag: string;
+    image_url: string | null;
+    created_at: string;
+  }
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsTotal, setNewsTotal] = useState(0);
+  const [newsPage, setNewsPage] = useState(1);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const NEWS_LIMIT = 6;
+
+  const [showAddNews, setShowAddNews] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newText, setNewText] = useState("");
+  const [newTag, setNewTag] = useState("Новость");
+  const [newImage, setNewImage] = useState<string | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const NEWS_URL = "https://functions.poehali.dev/f8b9af13-e04a-4c51-88b5-db2fd2257a25";
+
   const handleCopyIp = () => {
     navigator.clipboard.writeText(SERVER_IP);
     setCopied(true);
@@ -118,6 +142,54 @@ export default function Index() {
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchNews = async (page: number) => {
+    setNewsLoading(true);
+    try {
+      const res = await fetch(`${NEWS_URL}?page=${page}&limit=${NEWS_LIMIT}`);
+      const data = await res.json();
+      setNews(data.news || []);
+      setNewsTotal(data.total || 0);
+    } catch {
+      setNews([]);
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews(newsPage);
+  }, [newsPage]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setNewImagePreview(result);
+      setNewImage(result.split(",")[1]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubmitNews = async () => {
+    if (!newTitle.trim() || !newText.trim()) return;
+    setSubmitting(true);
+    try {
+      await fetch(NEWS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle, text: newText, tag: newTag, image: newImage }),
+      });
+      setShowAddNews(false);
+      setNewTitle(""); setNewText(""); setNewTag("Новость"); setNewImage(null); setNewImagePreview(null);
+      setNewsPage(1);
+      fetchNews(1);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen grid-lines relative font-exo">
@@ -292,36 +364,139 @@ export default function Index() {
             <section className="max-w-7xl mx-auto px-4 mb-16">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-1 h-8 rounded bg-[var(--neon-blue)] neon-glow" />
-                <h2 className="font-oswald text-2xl font-semibold text-white tracking-wide">Лента обновлений</h2>
-                <div className="ml-auto glass-card px-3 py-1 rounded text-blue-400/60 text-xs font-mono">
-                  {currentTime.toLocaleTimeString("ru-RU")}
+                <h2 className="font-oswald text-2xl font-semibold text-white tracking-wide">Новости</h2>
+                <div className="ml-auto flex items-center gap-2">
+                  <div className="glass-card px-3 py-1 rounded text-blue-400/60 text-xs font-mono">
+                    {currentTime.toLocaleTimeString("ru-RU")}
+                  </div>
+                  <button
+                    onClick={() => setShowAddNews(!showAddNews)}
+                    className="flex items-center gap-1.5 bg-[var(--neon-blue)]/10 border border-[var(--neon-blue)]/30 hover:bg-[var(--neon-blue)]/20 text-[var(--neon-blue)] text-xs font-semibold px-3 py-1.5 rounded transition-colors"
+                  >
+                    <Icon name="Plus" size={13} />
+                    Добавить
+                  </button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {UPDATES.map((update, i) => (
-                  <div
-                    key={update.id}
-                    className="card-navy rounded-xl p-5 border border-[var(--navy-border)] hover:border-[var(--neon-blue)]/40 hover:shadow-[0_0_20px_rgba(0,180,255,0.08)] transition-all cursor-pointer animate-slide-up"
-                    style={{ animationDelay: `${i * 0.07}s` }}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${update.type === "event" ? "bg-cyan-500/10 border border-cyan-500/30" : "bg-blue-500/10 border border-blue-500/30"}`}>
-                        <Icon name={update.icon} size={18} className={update.type === "event" ? "text-cyan-400" : "text-blue-400"} />
+
+              {showAddNews && (
+                <div className="card-navy rounded-xl p-5 border border-[var(--neon-blue)]/30 mb-6 animate-slide-up">
+                  <div className="font-oswald text-white font-semibold text-lg mb-4">Новая запись</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input
+                      className="bg-[var(--navy)] border border-[var(--navy-border)] rounded px-3 py-2 text-white text-sm placeholder-blue-400/40 focus:outline-none focus:border-[var(--neon-blue)]/50"
+                      placeholder="Заголовок"
+                      value={newTitle}
+                      onChange={e => setNewTitle(e.target.value)}
+                    />
+                    <select
+                      className="bg-[var(--navy)] border border-[var(--navy-border)] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--neon-blue)]/50"
+                      value={newTag}
+                      onChange={e => setNewTag(e.target.value)}
+                    >
+                      <option value="Новость">Новость</option>
+                      <option value="Обновление">Обновление</option>
+                      <option value="Событие">Событие</option>
+                    </select>
+                  </div>
+                  <textarea
+                    className="w-full bg-[var(--navy)] border border-[var(--navy-border)] rounded px-3 py-2 text-white text-sm placeholder-blue-400/40 focus:outline-none focus:border-[var(--neon-blue)]/50 mb-4 resize-none"
+                    placeholder="Текст новости..."
+                    rows={3}
+                    value={newText}
+                    onChange={e => setNewText(e.target.value)}
+                  />
+                  <div className="flex items-center gap-4 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-blue-400 hover:text-[var(--neon-blue)] text-sm transition-colors">
+                      <Icon name="Image" size={16} />
+                      <span>Прикрепить фото</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    </label>
+                    {newImagePreview && (
+                      <div className="relative">
+                        <img src={newImagePreview} className="w-16 h-16 object-cover rounded border border-[var(--navy-border)]" />
+                        <button
+                          onClick={() => { setNewImage(null); setNewImagePreview(null); }}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+                        >
+                          <Icon name="X" size={10} />
+                        </button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${update.type === "event" ? "bg-cyan-500/10 text-cyan-400" : "bg-blue-500/10 text-blue-400"}`}>
-                            {update.tag}
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSubmitNews}
+                      disabled={submitting || !newTitle.trim() || !newText.trim()}
+                      className="bg-[var(--neon-blue)] text-[var(--deep-navy)] font-bold px-6 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                    >
+                      {submitting ? "Публикую..." : "Опубликовать"}
+                    </button>
+                    <button
+                      onClick={() => setShowAddNews(false)}
+                      className="glass-card border border-[var(--navy-border)] text-blue-400 px-6 py-2 rounded text-sm hover:text-white transition-colors"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {newsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="card-navy rounded-xl p-5 border border-[var(--navy-border)] animate-pulse h-32" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {news.map((item, i) => (
+                    <div
+                      key={item.id}
+                      className="card-navy rounded-xl border border-[var(--navy-border)] hover:border-[var(--neon-blue)]/40 hover:shadow-[0_0_20px_rgba(0,180,255,0.08)] transition-all overflow-hidden animate-slide-up"
+                      style={{ animationDelay: `${i * 0.07}s` }}
+                    >
+                      {item.image_url && (
+                        <img src={item.image_url} alt={item.title} className="w-full h-40 object-cover" />
+                      )}
+                      <div className="p-5">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${item.tag === "Событие" ? "bg-cyan-500/10 text-cyan-400" : item.tag === "Обновление" ? "bg-blue-500/10 text-blue-400" : "bg-indigo-500/10 text-indigo-400"}`}>
+                            {item.tag}
                           </span>
-                          <span className="text-blue-400/40 text-xs">{update.date}</span>
+                          <span className="text-blue-400/40 text-xs">{item.created_at}</span>
                         </div>
-                        <div className="text-white font-semibold text-sm mb-1 leading-snug">{update.title}</div>
-                        <div className="text-blue-300/60 text-xs leading-relaxed">{update.text}</div>
+                        <div className="text-white font-semibold text-sm mb-1 leading-snug">{item.title}</div>
+                        <div className="text-blue-300/60 text-xs leading-relaxed">{item.text}</div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+
+              {newsTotal > NEWS_LIMIT && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setNewsPage(p => Math.max(1, p - 1))}
+                    disabled={newsPage === 1}
+                    className="glass-card border border-[var(--navy-border)] text-blue-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors flex items-center gap-1"
+                  >
+                    <Icon name="ChevronLeft" size={15} />
+                    Назад
+                  </button>
+                  <span className="text-blue-400/60 text-sm px-3">
+                    {newsPage} / {Math.ceil(newsTotal / NEWS_LIMIT)}
+                  </span>
+                  <button
+                    onClick={() => setNewsPage(p => p + 1)}
+                    disabled={newsPage >= Math.ceil(newsTotal / NEWS_LIMIT)}
+                    className="glass-card border border-[var(--navy-border)] text-blue-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors flex items-center gap-1"
+                  >
+                    Вперёд
+                    <Icon name="ChevronRight" size={15} />
+                  </button>
+                </div>
+              )}
             </section>
           </div>
         )}
