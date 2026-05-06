@@ -101,9 +101,11 @@ export default function Index() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-[var(--navy-border)]">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-[var(--neon-blue)] flex items-center justify-center neon-glow">
-              <span className="text-[var(--deep-navy)] font-oswald font-bold text-sm">NRP</span>
-            </div>
+            <img
+              src="https://cdn.poehali.dev/projects/869983e7-1a51-4569-bf14-862f6fc16bef/bucket/1ae80966-383e-43e3-858e-f9cf7735359f.png"
+              alt="Nebraska RP Logo"
+              className="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(0,180,255,0.6)]"
+            />
             <div>
               <span className="font-oswald font-bold text-white text-lg tracking-wider">NEBRASKA</span>
               <span className="font-oswald font-light text-[var(--neon-blue)] text-lg tracking-wider ml-1">ROLE PLAY</span>
