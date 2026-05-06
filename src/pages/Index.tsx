@@ -10,9 +10,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: string }[] = [
 ];
 
 const SERVERS = [
-  { name: "Nebraska RP #1", ip: "37.230.210.1:7777", players: 248, maxPlayers: 500, mode: "Roleplay" },
-  { name: "Nebraska RP #2", ip: "37.230.210.2:7777", players: 134, maxPlayers: 300, mode: "Roleplay" },
-  { name: "Nebraska TEST", ip: "37.230.210.3:7777", players: 12, maxPlayers: 50, mode: "Test Server" },
+  { name: "Nebraska RP #1", ip: "188.127.241.74:3109", players: 248, maxPlayers: 500, mode: "Roleplay" },
 ];
 
 const UPDATES = [
@@ -175,6 +173,11 @@ export default function Index() {
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400 online-dot" />
                   <span className="text-green-400 text-xs font-semibold uppercase tracking-widest">Серверы онлайн</span>
                 </div>
+                <img
+                  src="https://cdn.poehali.dev/projects/869983e7-1a51-4569-bf14-862f6fc16bef/bucket/1ae80966-383e-43e3-858e-f9cf7735359f.png"
+                  alt="Nebraska RP"
+                  className="w-24 h-24 object-contain drop-shadow-[0_0_24px_rgba(0,180,255,0.7)] mb-4"
+                />
                 <h1 className="font-oswald text-5xl md:text-7xl font-bold text-white leading-none mb-2">NEBRASKA</h1>
                 <h2 className="font-oswald text-5xl md:text-7xl font-light neon-text leading-none mb-6">ROLE PLAY</h2>
                 <p className="text-blue-300/80 text-lg max-w-xl mb-8 font-light">
@@ -195,7 +198,7 @@ export default function Index() {
             </section>
 
             <section className="max-w-7xl mx-auto px-4 -mt-8 relative z-10 mb-12">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-lg mx-auto">
                 {SERVERS.map((srv, i) => (
                   <div key={i} className="card-navy rounded-xl p-5 neon-border border hover:scale-[1.02] transition-transform animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
                     <div className="flex items-start justify-between mb-3">
