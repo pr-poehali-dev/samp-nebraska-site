@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Get server status",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"players": 0},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

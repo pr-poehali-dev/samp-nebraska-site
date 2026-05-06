@@ -9,9 +9,15 @@ const NAV_ITEMS: { id: Section; label: string; icon: string }[] = [
   { id: "donate", label: "Донат", icon: "Gem" },
 ];
 
-const SERVERS = [
-  { name: "Nebraska RP #1", ip: "188.127.241.74:3109", players: 248, maxPlayers: 500, mode: "Roleplay" },
-];
+const SERVER_IP = "188.127.241.74:3109";
+const STATUS_URL = "https://functions.poehali.dev/93007f83-aeeb-45bd-b98b-030e3acfba25";
+
+interface ServerStatus {
+  online: boolean;
+  players: number;
+  maxPlayers: number;
+  hostname: string;
+}
 
 const UPDATES = [
   {
@@ -84,11 +90,22 @@ export default function Index() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
 
   const handleCopyIp = () => {
-    navigator.clipboard.writeText(SERVERS[0].ip);
+    navigator.clipboard.writeText(SERVER_IP);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch(STATUS_URL);
+      const data = await res.json();
+      setServerStatus(data);
+    } catch {
+      setServerStatus({ online: false, players: 0, maxPlayers: 0, hostname: "" });
+    }
   };
 
   useEffect(() => {
@@ -96,7 +113,11 @@ export default function Index() {
     return () => clearInterval(timer);
   }, []);
 
-  const totalOnline = SERVERS.reduce((s, srv) => s + srv.players, 0);
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen grid-lines relative font-exo">
@@ -135,9 +156,17 @@ export default function Index() {
           </div>
 
           <div className="hidden md:flex items-center gap-2 glass-card px-3 py-1.5 rounded">
-            <div className="w-2 h-2 rounded-full bg-green-400 online-dot" />
-            <span className="text-green-400 font-bold text-sm">{totalOnline}</span>
-            <span className="text-blue-400/60 text-xs">онлайн</span>
+            <div className={`w-2 h-2 rounded-full ${serverStatus?.online ? "bg-green-400 online-dot" : "bg-red-500"}`} />
+            {serverStatus === null ? (
+              <span className="text-blue-400/60 text-xs">загрузка...</span>
+            ) : serverStatus.online ? (
+              <>
+                <span className="text-green-400 font-bold text-sm">{serverStatus.players}</span>
+                <span className="text-blue-400/60 text-xs">онлайн</span>
+              </>
+            ) : (
+              <span className="text-red-400 text-xs font-semibold">офлайн</span>
+            )}
           </div>
 
           <button
@@ -177,8 +206,10 @@ export default function Index() {
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-navy)] via-transparent to-transparent" />
               <div className="relative max-w-7xl mx-auto px-4 py-20 animate-slide-up">
                 <div className="inline-flex items-center gap-2 glass-card px-3 py-1.5 rounded-full mb-6">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 online-dot" />
-                  <span className="text-green-400 text-xs font-semibold uppercase tracking-widest">Серверы онлайн</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${serverStatus?.online ? "bg-green-400 online-dot" : serverStatus === null ? "bg-blue-400 animate-pulse" : "bg-red-500"}`} />
+                  <span className={`text-xs font-semibold uppercase tracking-widest ${serverStatus?.online ? "text-green-400" : serverStatus === null ? "text-blue-400" : "text-red-400"}`}>
+                    {serverStatus === null ? "Проверка сервера..." : serverStatus.online ? `Онлайн · ${serverStatus.players} игроков` : "Сервер недоступен"}
+                  </span>
                 </div>
                 <img
                   src="https://cdn.poehali.dev/projects/869983e7-1a51-4569-bf14-862f6fc16bef/bucket/1ae80966-383e-43e3-858e-f9cf7735359f.png"
@@ -209,38 +240,52 @@ export default function Index() {
             </section>
 
             <section className="max-w-7xl mx-auto px-4 -mt-8 relative z-10 mb-12">
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-lg mx-auto">
-                {SERVERS.map((srv, i) => (
-                  <div key={i} className="card-navy rounded-xl p-5 neon-border border hover:scale-[1.02] transition-transform animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="font-oswald text-white font-semibold text-lg">{srv.name}</div>
-                        <div className="text-blue-400/50 text-xs font-mono mt-0.5">{srv.ip}</div>
+              <div className="max-w-lg mx-auto">
+                <div className="card-navy rounded-xl p-5 neon-border border animate-slide-up">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="font-oswald text-white font-semibold text-lg">Nebraska RP #1</div>
+                      <div className="text-blue-400/50 text-xs font-mono mt-0.5">{SERVER_IP}</div>
+                    </div>
+                    {serverStatus === null ? (
+                      <div className="flex items-center gap-1.5 bg-blue-950/50 px-2 py-1 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        <span className="text-blue-400 text-xs font-semibold">Проверка...</span>
                       </div>
+                    ) : serverStatus.online ? (
                       <div className="flex items-center gap-1.5 bg-green-950/50 px-2 py-1 rounded-full">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 online-dot" />
                         <span className="text-green-400 text-xs font-semibold">Online</span>
                       </div>
-                    </div>
-                    <div className="mb-2">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-blue-400/60">Игроков</span>
-                        <span className="text-white font-bold">{srv.players} / {srv.maxPlayers}</span>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-red-950/50 px-2 py-1 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        <span className="text-red-400 text-xs font-semibold">Offline</span>
                       </div>
-                      <div className="h-1.5 bg-[var(--navy)] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(srv.players / srv.maxPlayers) * 100}%`,
-                            background: `linear-gradient(90deg, var(--neon-blue), var(--neon-cyan))`,
-                            boxShadow: `0 0 8px var(--neon-blue)`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-blue-400/50 text-xs">{srv.mode}</div>
+                    )}
                   </div>
-                ))}
+                  <div className="mb-2">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-blue-400/60">Игроков</span>
+                      <span className="text-white font-bold">
+                        {serverStatus ? `${serverStatus.players} / ${serverStatus.maxPlayers}` : "— / —"}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-[var(--navy)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: serverStatus && serverStatus.maxPlayers > 0
+                            ? `${(serverStatus.players / serverStatus.maxPlayers) * 100}%`
+                            : "0%",
+                          background: `linear-gradient(90deg, var(--neon-blue), var(--neon-cyan))`,
+                          boxShadow: `0 0 8px var(--neon-blue)`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-blue-400/50 text-xs">Roleplay</div>
+                </div>
               </div>
             </section>
 
